@@ -10,9 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## R Markdown
-
 ```{r}
-read.table("./General Social Survey, 2016.DAT", 
-           header=TRUE, skip=3)
+library(haven)
+GSS2018 <- read_sav("GSS2018.sav")
+View(GSS2018)
 ```
 
