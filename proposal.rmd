@@ -1,0 +1,18 @@
+---
+title: "Proposal"
+author: "Enzo Moraes Mescall, Charlotte Coudert, Martin Olarte"
+date: "2022-12-08"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+read.table("./General Social Survey, 2016.DAT", 
+           header=TRUE, skip=3)
+```
+
