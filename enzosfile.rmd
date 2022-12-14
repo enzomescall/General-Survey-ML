@@ -6,26 +6,30 @@ output: html_document
 ---
 
 ```{r}
+library(tidyverse)
 library(haven)
 library(dplyr)
 library(stringr)
 library(purrr)
+
 GSS2018 <- read_sav("GSS2018.sav")
-View(GSS2018)
 ```
 
 ```{r}
-n <- ncol(GSS2018)
-labels_vector <- map_chr(1:n, function(x) attr(GSS2018[[x]], "label"))
-variable_name <- names(GSS2018)
-code_book <- data.frame(variable_name, description = labels_vector)
+n = ncol(GSS2018)
+labels_vector = map_chr(1:n, function(x) attr(GSS2018[[x]], "label"))
+variable_name = names(GSS2018)
+code_book = data.frame(variable_name, description = labels_vector)
 
-relig_codebook <- code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
+relig_codebook = code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
 
 code_book[grep("scientific", labels_vector, ignore.case = TRUE),]
 
-relig_df <- GSS2018 %>% 
+relig_df = GSS2018 %>% 
   select(relig_codebook$variable_name)
-
-View(relig_df)
 ```
+
+```{r}
+relig_df %>% summarise(across(everything(), ~ sum(is.na(.)))) %>% pivot_longer(cols = c(1:82)) %>% arrange(value)
+```
+
