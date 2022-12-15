@@ -9,8 +9,13 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-```{r setup}
+## Abstract
+## Introduction
+## Data
+## Data Cleaning
+## Exploratory Data Analysis
+## Modeling
+```{r libraries}
 library(haven)
 library(dplyr)
 library(stringr)
@@ -174,7 +179,11 @@ ratios_table_relevel %>%
   filter(row.names(.) %in% signif_relevel)
 ```
 
+## Inference
+
 - for every one unit decrease in frequency prayed, the odds of being more confident in science increases 13%
 - for every one unit increase in attendance to religious services, the odds of being more confident in science increases 6% 
 - for every one unit decrease in level of devotion to the Bible, the odds of being more confident in science increases 70% 
 - for every one unit decrease in how fundamentalist the respondent was, the odds of being more confident in science increases 24%
+
+## Conclusion
