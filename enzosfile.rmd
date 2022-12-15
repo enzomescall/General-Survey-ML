@@ -30,6 +30,15 @@ relig_df = GSS2018 %>%
 ```
 
 ```{r}
-relig_df %>% summarise(across(everything(), ~ sum(is.na(.)))) %>% pivot_longer(cols = c(1:82)) %>% arrange(value)
+na_num = relig_df %>% # number of NAs per column
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = c(1:82)) %>%
+  arrange(value) %>%
+  filter(value < 0.1*nrow(relig_df))
+
+num_levels = relig_df %>%
+  select(na_num$name) %>%
+  map(function(x) list(x[1], as.factor(x)[1])) 
 ```
+
 
