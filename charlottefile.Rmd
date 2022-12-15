@@ -22,3 +22,74 @@ relig_data2 <- GSS2018 %>% select(RELIG, DENOM,OTHER,OTHJEW,JEW,JEWAJ,FUND,ATTEN
 ##DOUBTS3 is "HAS SCIENCE-FAITH CONFLICT CAUSED DOUBT"!!!!
 ##SCIFAITH,HARMGOOD,NATURGOD <- MAYBE TOO CLOSE TO RESPONSE
 ```
+
+
+```{r}
+library(haven)
+library(dplyr)
+library(stringr)
+library(purrr)
+GSS2018 <- read_sav("GSS2018.sav")
+View(GSS2018)
+```
+
+```{r}
+n <- ncol(GSS2018)
+labels_vector <- map_chr(1:n, function(x) attr(GSS2018[[x]], "label"))
+variable_name <- names(GSS2018)
+code_book <- data.frame(variable_name, description = labels_vector)
+
+relig_codebook <- code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
+
+code_book[grep("scientific", labels_vector, ignore.case = TRUE),]
+
+relig_df <- GSS2018 %>% 
+  select(relig_codebook$variable_name, CONSCI)
+
+View(relig_df)
+```
+
+```{r}
+library(tree)
+library(gbm)
+library(randomForest)
+```
+
+```{r}
+tree <- tree(as.factor(CONSCI) ~., data = small_data)
+prune_tree <- prune.tree(tree, best = 8)
+plot(tree)
+text(tree, pretty = 0)
+summary(tree)
+#boost.cars <- gbm( ~., data = small_data, 
+#                    distribution = "gaussian", n.trees = 1000,
+#                    interaction.depth = 3)
+
+#bag <- randomForest(CONSCI~., data = small_data, ntree = 100,
+#                           mtry = 11, importance = TRUE)'
+#                    
+
+```
+
+```{r}
+small_data = relig_df %>% 
+  select(CONSCI, ATTEND, BIBLE, FUND, FUND16, GOD, PRAY, RELACTIV, RELIG, RELIG16, RELITEN, RELPERSN) #%>%
+  #mutate(consci = as.factor(CONSCI))
+summary(small_data)
+```
+
+```{r}
+fit <- glm(as.factor(CONSCI) ~ .,data=small_data, family=binomial(link="logit"))
+summary(fit)
+plot(fit)
+```
+```{r}
+hist(small_data$GOD)
+```
+
+INTRO
+A few paragraphs which (i) motivate problem importance & relevance (supported by relevant literature, if any), (ii) describe project goals and how such goals address the problem, as well as (iii) a high-level roadmap of the proposed methodology, and (iv) other relevant information for the reader. See project rubric for details.
+
+In April 2020, President of the American Medical Association Dr. Patrice Harris said in a national address "In these challenging times, I am addressing the nation to make an appeal for science in defeating this disease." The conflict between religion and science has been a conflict for a long time but never quite so pertinent as during the COVID-19 pandemic. Belief in science and trust in national medical recommendations 
+
+source:https://www.ama-assn.org/press-center/speeches/covid-19-importance-science-era-distrust-and-disinformation

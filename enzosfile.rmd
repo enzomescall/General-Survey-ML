@@ -21,7 +21,7 @@ labels_vector = map_chr(1:n, function(x) attr(GSS2018[[x]], "label"))
 variable_name = names(GSS2018)
 code_book = data.frame(variable_name, description = labels_vector)
 
-relig_codebook = code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
+relig_codebook = code_book[grep("happy|relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
 
 code_book[grep("scientific", labels_vector, ignore.case = TRUE),]
 
@@ -30,6 +30,22 @@ relig_df = GSS2018 %>%
 ```
 
 ```{r}
-relig_df %>% summarise(across(everything(), ~ sum(is.na(.)))) %>% pivot_longer(cols = c(1:82)) %>% arrange(value)
+na_num = relig_df %>% # number of NAs per column
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = c(1:82)) %>%
+  arrange(value) %>%
+  filter(value < 0.1*nrow(relig_df))
+
+num_levels = relig_df %>%
+  select(na_num$name) %>%
+  map(function(x) list(x[1], as.factor(x)[1]))
 ```
+
+```{r}
+relig_small = relig_df %>%
+  select(na_num$name) %>%
+  view()
+```
+
+
 
