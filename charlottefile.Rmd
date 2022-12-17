@@ -93,3 +93,8 @@ hist(relevel_df$PRAY)
 hist(relevel_df$ATTEND)
 ```
 
+```{r}
+#plot(GSS2018$FUND, type = "h", color= GSS2018$DOUBT3)
+plot(GSS2018$FUND, GSS2018$CONCHURH)
+```
+
