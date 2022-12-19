@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, fig.width = 5, fig.height = 3)
 library(haven)
 library(dplyr)
 library(stringr)
@@ -163,11 +163,12 @@ plot_df %>%
 
 ```{r}
 plot_df %>%
-  ggplot(aes(x = CONSCI_re)) +
-    geom_bar(fill = "#52a3d9") +
-    labs(title = "Distribution of Respondent's Level of Trust in Science",
-         y = "Number of Respondents", x = "Respondent's Trust in Science",
-         subtitle = "About 30% of respondents did not answer this question") +
+  dplyr::select(MUSLIMS) %>%
+  drop_na() %>%
+  ggplot(aes(x = MUSLIMS)) +
+    geom_bar(fill = "#4a8253") +
+    labs(title = "Distribution of Respondent's Opinion Towards Muslims",
+         x = "Respondent's Opinion Towards Muslims", y = "Number of Respondents") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust=1),
           axis.title.x = element_text(vjust = -0.25),
@@ -176,12 +177,11 @@ plot_df %>%
 
 ```{r}
 plot_df %>%
-  dplyr::select(MUSLIMS) %>%
-  drop_na() %>%
-  ggplot(aes(x = MUSLIMS)) +
-    geom_bar(fill = "#4a8253") +
-    labs(title = "Distribution of Respondent's Opinion Towards Muslims",
-         x = "Respondent's Opinion Towards Muslims", y = "Number of Respondents") +
+  ggplot(aes(x = CONSCI_re)) +
+    geom_bar(fill = "#52a3d9") +
+    labs(title = "Distribution of Respondent's Level of Trust in Science",
+         y = "Number of Respondents", x = "Respondent's Trust in Science",
+         subtitle = "About 30% of respondents did not answer this question") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust=1),
           axis.title.x = element_text(vjust = -0.25),
