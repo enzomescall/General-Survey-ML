@@ -1,51 +1,215 @@
 ---
-title: "just messin about"
-author: "enzo"
-date: "2022-12-09"
-output: html_document
+title: "Exploring the Relationship Between Religion and Trust in Science"
+author: "Enzo Moraes Mescall, Charlotte Coudert, Martin Olarte"
+date: "2022-12-08"
+output: pdf_document
 ---
 
-```{r}
-library(tidyverse)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Cleaning
+
+```{r libraries}
 library(haven)
 library(dplyr)
 library(stringr)
 library(purrr)
-
+library(tidyverse)
+library(MASS)
+library(lmreg)
 GSS2018 <- read_sav("GSS2018.sav")
 ```
 
-```{r}
-n = ncol(GSS2018)
-labels_vector = map_chr(1:n, function(x) attr(GSS2018[[x]], "label"))
-variable_name = names(GSS2018)
-code_book = data.frame(variable_name, description = labels_vector)
+```{r data_cleaning}
 
-relig_codebook = code_book[grep("happy|relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
+#Create codebook with variable descriptions
+n <- ncol(GSS2018)
+labels_vector <- map_chr(1:n, function(x) attr(GSS2018[[x]], "label"))
+variable_name <- names(GSS2018)
+code_book <- data.frame(variable_name, description = labels_vector)
 
-code_book[grep("scientific", labels_vector, ignore.case = TRUE),]
+#Filter for religious regex
+relig_codebook <- code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
 
-relig_df = GSS2018 %>% 
-  select(relig_codebook$variable_name)
+relig_df <- GSS2018 %>% 
+  dplyr::select(relig_codebook$variable_name)
+
+
+#Add response to religious df
+all_vars <- code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray|Confidence in scientific community", labels_vector, ignore.case = TRUE),]
+
+all_df <- GSS2018 %>% 
+  dplyr::select(all_vars$variable_name)
+
 ```
 
-```{r}
-na_num = relig_df %>% # number of NAs per column
-  summarise(across(everything(), ~ sum(is.na(.)))) %>%
-  pivot_longer(cols = c(1:82)) %>%
+```{r first_model}
+#Filtering predictors with less than 10% NA values
+least_na <- relig_df %>% 
+  summarise(across(everything(), ~ sum(is.na(.)))) %>% 
+  pivot_longer(cols = c(1:82)) %>% 
   arrange(value) %>%
-  filter(value < 0.1*nrow(relig_df))
+  filter(value < nrow(relig_df) * 0.35)
 
-num_levels = relig_df %>%
-  select(na_num$name) %>%
-  map(function(x) list(x[1], as.factor(x)[1]))
+the_df <- all_df %>%
+  dplyr::select(least_na$name, CONSCI)
+```
+
+```{r second_model}
+#Making each religion into it's own predictor made up of binary variables
+religions <- data.frame(binaries(as.factor(all_df$RELIG)))
+colnames(religions) <- c("CHRISTIAN", "CATHOLIC", "NONE", "PROTESTANT", "MOSLEM/ISLAM", "ORTHODOX-CHRISTIAN", "BUDDHISM", "JEWISH", "OTHER", "HINDUISM", "NA_RELIGION", "INTER-NONDENOMINATIONAL", "OTHER EASTERN", "NATIVE AMERICAN")
+
+#Removing religions that would make the model rank deficient due to NAs
+new_df <- the_df %>%
+  cbind(religions) %>%
+  dplyr::select(-c("MOSLEM/ISLAM", "ORTHODOX-CHRISTIAN", "BUDDHISM", "JEWISH", "OTHER", "HINDUISM", "NA_RELIGION", "INTER-NONDENOMINATIONAL", "OTHER EASTERN", "NATIVE AMERICAN"))
+```
+
+```{r third_model}
+#Relevel CONSCI to make results interpretable
+relevel_df <- new_df %>%
+  mutate(CONSCI_re = case_when(
+    CONSCI == 1 ~ 3, #Now 3 means A GREAT DEAL of confidence in the scientific community
+    CONSCI == 2 ~ 2, #2 still means ONLY SOME confidence in the scientific community
+    CONSCI == 3 ~ 1, #Now 1 means HARDLY ANY confidence in the scientific community
+    TRUE ~ NA_real_
+  )) %>%
+  dplyr::select(-CONSCI)
+```
+
+## Exploratory Data Analysis
+
+```{r}
+head(relevel_df)
 ```
 
 ```{r}
-relig_small = relig_df %>%
-  select(na_num$name) %>%
-  view()
+plot_df = all_df %>%
+  mutate(CONSCI_re = case_when(
+    CONSCI == 1 ~ 3, #Now 3 means A GREAT DEAL of confidence in the scientific community
+    CONSCI == 2 ~ 2, #2 still means ONLY SOME confidence in the scientific community
+    CONSCI == 3 ~ 1, #Now 1 means HARDLY ANY confidence in the scientific community
+    TRUE ~ NA_real_
+  )) %>%
+  dplyr::select(-CONSCI) %>%
+  mutate(PRAY = as.factor(PRAY),
+         RELIG = as.factor(RELIG),
+         CONSCI_re = as.factor(CONSCI_re),
+         COLMSLM = as.factor(COLMSLM),
+         MUSLIMS = as.factor(MUSLIMS),
+         BIBLE = as.factor(BIBLE))
+
+levels(plot_df$PRAY) = c("SEVERAL TIMES A DAY",
+                         "ONCE A DAY",
+                         "SEVERAL TIMES A WEEK",
+                         "ONCE A WEEK",
+                         "LESS THAN ONCE A WEEK",
+                         "NEVER",
+                         "DK",
+                         "NA")
+
+levels(plot_df$RELIG) = c("PROTESTANT",
+                          "CATHOLIC",
+                          "JEWISH",
+                          "NONE",
+                          "OTHER",
+                          "BUDDHISM",
+                          "HINDUISM",
+                          "OTHER EASTERN",
+                          "MOSLEM/ISLAM",
+                          "ORTHODOX-CHRISTIAN",
+                          "CHRISTIAN",
+                          "NATIVE AMERICAN",
+                          "INTER-NONDENOMINATIONAL",
+                          "DK",
+                          "NA")
+
+levels(plot_df$CONSCI_re) = c("HARDLY ANY",
+                              "ONLY SOME",
+                             "A GREAT DEAL")
+
+levels(plot_df$MUSLIMS) = c("VERY POSTIIVE",
+                           "SOMEWHAT POSITIVE",
+                           "NEUTRAL",
+                           "SOMEWHAT NEGATIVE",
+                           "VERY NEGATIVE",
+                           "DONT KNOW",
+                           "NO ANSWER")
+
+levels(plot_df$BIBLE) = c("WORD OF GOD",
+                          "INSPIRED WORD",
+                          "BOOK OF FABLES",
+                          "OTHER")
 ```
 
 
+```{r}
+plot_df %>%
+  ggplot(aes(x = PRAY)) +
+    geom_bar(fill = "#90c6ef") +
+    labs(title = "Distribution of Prayer Frequency Among Respondents",
+         y = "Number of Respondents", x = "Frequency of Prayer") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.title.x = element_text(vjust = -0.25),
+          axis.line = element_line(color = "black"))
+```
 
+
+```{r}
+plot_df %>%
+  ggplot(aes(x = RELIG)) +
+    geom_bar(fill = "#a11111") +
+    labs(title = "Distribution of Religious Affiliation Among Respondents",
+         y = "Number of Respondents", x = "Respondent's Religious Affiliation",
+         subtitle = "Quantity of responses are heavily skewed towards some religons") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.title.x = element_text(vjust = -0.25),
+          axis.line = element_line(color = "black")) 
+```
+
+```{r}
+plot_df %>%
+  ggplot(aes(x = CONSCI_re)) +
+    geom_bar(fill = "#52a3d9") +
+    labs(title = "Distribution of Respondent's Level of Trust in Science",
+         y = "Number of Respondents", x = "Respondent's Trust in Science",
+         subtitle = "About 30% of respondents did not answer this question") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.title.x = element_text(vjust = -0.25),
+          axis.line = element_line(color = "black")) 
+```
+
+```{r}
+plot_df %>%
+  dplyr::select(MUSLIMS) %>%
+  drop_na() %>%
+  ggplot(aes(x = MUSLIMS)) +
+    geom_bar(fill = "#4a8253") +
+    labs(title = "Distribution of Respondent's Opinion Towards Muslims",
+         x = "Respondent's Opinion Towards Muslims", y = "Number of Respondents") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.title.x = element_text(vjust = -0.25),
+          axis.line = element_line(color = "black")) 
+```
+
+```{r}
+plot_df %>%
+  dplyr::select(CONSCI_re, BIBLE) %>%
+  drop_na() %>%
+  ggplot(aes(x = CONSCI_re, fill = BIBLE)) +
+    geom_bar() +
+    labs(title = "Distribution of Respondent's Level of Trust in Science by Feelings on Bible",
+         y = "Number of Respondents", x = "Respondent's Trust in Science",
+         subtitle = "Removing NAs", fill = "Respondent's feelings\nabout the Bible") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          axis.title.x = element_text(vjust = -0.25),
+          axis.line = element_line(color = "black")) 
+```
