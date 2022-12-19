@@ -35,14 +35,18 @@ variable_name <- names(GSS2018)
 code_book <- data.frame(variable_name, description = labels_vector)
 
 #Filter for religious regex
-relig_codebook <- code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", labels_vector, ignore.case = TRUE),]
+relig_codebook <- code_book[
+  grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray", 
+       labels_vector, ignore.case = TRUE),]
 
 relig_df <- GSS2018 %>% 
   dplyr::select(relig_codebook$variable_name)
 
 
 #Add response to religious df
-all_vars <- code_book[grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray|Confidence in scientific community", labels_vector, ignore.case = TRUE),]
+all_vars <- code_book[
+  grep("relig|strength of affiliation|god|jew|denomination|fundamentalist|bible|muslim|belief|church|pray|Confidence in scientific community", 
+       labels_vector, ignore.case = TRUE),]
 
 all_df <- GSS2018 %>% 
   dplyr::select(all_vars$variable_name)
@@ -87,12 +91,19 @@ full_table_first
 ```{r second_model}
 #Making each religion into it's own predictor made up of binary variables
 religions <- data.frame(binaries(as.factor(all_df$RELIG)))
-colnames(religions) <- c("CHRISTIAN", "CATHOLIC", "NONE", "PROTESTANT", "MOSLEM/ISLAM", "ORTHODOX-CHRISTIAN", "BUDDHISM", "JEWISH", "OTHER", "HINDUISM", "NA_RELIGION", "INTER-NONDENOMINATIONAL", "OTHER EASTERN", "NATIVE AMERICAN")
+colnames(religions) <- c("CHRISTIAN", "CATHOLIC", "NONE", "PROTESTANT", 
+                         "MOSLEM/ISLAM", "ORTHODOX-CHRISTIAN", "BUDDHISM", 
+                         "JEWISH", "OTHER", "HINDUISM", "NA_RELIGION", 
+                         "INTER-NONDENOMINATIONAL", "OTHER EASTERN", 
+                         "NATIVE AMERICAN")
 
 #Removing religions that would make the model rank deficient due to NAs
 new_df <- the_df %>%
   cbind(religions) %>%
-  dplyr::select(-c("MOSLEM/ISLAM", "ORTHODOX-CHRISTIAN", "BUDDHISM", "JEWISH", "OTHER", "HINDUISM", "NA_RELIGION", "INTER-NONDENOMINATIONAL", "OTHER EASTERN", "NATIVE AMERICAN"))
+  dplyr::select(-c("MOSLEM/ISLAM", "ORTHODOX-CHRISTIAN", "BUDDHISM", 
+                   "JEWISH", "OTHER", "HINDUISM", "NA_RELIGION", 
+                   "INTER-NONDENOMINATIONAL", "OTHER EASTERN", 
+                   "NATIVE AMERICAN"))
 
 #New model with Christian, Catholic, None, and Protestant vars
 new_model <- polr(as.factor(CONSCI) ~ ., data = new_df, Hess=TRUE)
